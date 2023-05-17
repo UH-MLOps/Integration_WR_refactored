@@ -1,4 +1,6 @@
 import config as cfg
+import warnings
+warnings.filterwarnings('ignore')
 import json
 import numpy as np
 import pandas as pd
@@ -6,9 +8,10 @@ import geopandas as gpd
 from geographiclib.geodesic import Geodesic as GD
 from scipy.interpolate import interpn
 from datetime import datetime, timedelta
-import pytz
-import warnings
-warnings.filterwarnings('ignore')
+from timezonefinder import TimezoneFinder
+from dateutil import tz
+
+
 def read_files():
     if cfg.FILE_NAME.endswith('.json'):
         with open(cfg.FILE_NAME) as data_file:
@@ -39,7 +42,13 @@ def filter_waypoints(df):
     filtered_df = df.cx[cfg.AREA_BOUNDING_BOX[1][1]:cfg.AREA_BOUNDING_BOX[0][1], :]
     if len(filtered_df) == 0:
         raise ValueError('Rerouting point outside the right bound of the experimenting area')
-    filtered_df = filtered_df[filtered_df['timestamp'] >= cfg.WAYPOINT_T0]
+    if cfg.WAYPOINT_T0:
+        dt = cfg.WAYPOINT_T0
+    else:
+        tzf_obj = TimezoneFinder()
+        tz_file = tz.gettz(tzf_obj.timezone_at(lng=cfg.WAYPOINT_G0[1], lat=cfg.WAYPOINT_G0[0]))
+        dt = pd.Timestamp(datetime.now(tz_file))
+    filtered_df = filtered_df[filtered_df['timestamp'] >= dt]
     index = list(filtered_df.index)
     index.extend([np.max(index) + 1, np.min(index) - 1])
     filtered_df = df.iloc[index, :]
@@ -131,8 +140,12 @@ def intp_lat_ts_cog(row, sections_waypoints):
 def get_last_weather_forecast():
     '''return the forecast files names and the timestamps of the forecast'''
     # only keep the year month day hour minute seconds
-    dt = cfg.WAYPOINT_T0
-
+    if cfg.WAYPOINT_T0:
+        dt = cfg.WAYPOINT_T0
+    else:
+        tzf_obj = TimezoneFinder()
+        tz_file = tz.gettz(tzf_obj.timezone_at(lng=cfg.WAYPOINT_G0[1], lat=cfg.WAYPOINT_G0[0]))
+        dt = pd.Timestamp(datetime.now(tz_file))
     forecast_hour = (dt.hour // 6) * 6
     last_forecast = pytz.utc.localize(datetime(dt.year, dt.month, dt.day, forecast_hour))
     previous_forecast = last_forecast - timedelta(hours=6)
