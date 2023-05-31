@@ -7,7 +7,7 @@ import pandas as pd
 import geopandas as gpd
 from geographiclib.geodesic import Geodesic as GD
 from scipy.interpolate import interpn
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from timezonefinder import TimezoneFinder
 from dateutil import tz
 
@@ -42,12 +42,7 @@ def filter_waypoints(df):
     filtered_df = df.cx[cfg.AREA_BOUNDING_BOX[1][1]:cfg.AREA_BOUNDING_BOX[0][1], :]
     if len(filtered_df) == 0:
         raise ValueError('Rerouting point outside the right bound of the experimenting area')
-    if cfg.WAYPOINT_T0:
-        dt = cfg.WAYPOINT_T0
-    else:
-        tzf_obj = TimezoneFinder()
-        tz_file = tz.gettz(tzf_obj.timezone_at(lng=cfg.WAYPOINT_G0[1], lat=cfg.WAYPOINT_G0[0]))
-        dt = pd.Timestamp(datetime.now(tz_file))
+    dt = cfg.WAYPOINT_T0
     filtered_df = filtered_df[filtered_df['timestamp'] >= dt]
     index = list(filtered_df.index)
     index.extend([np.max(index) + 1, np.min(index) - 1])
@@ -89,6 +84,10 @@ def calculate_waypoints(df):
     sections_waypoints['cog'] = sections_waypoints['cog'].astype(float)
     return sections_waypoints
 
+def find_G0(start, end):
+    for val in cfg.LONG_LIST:
+        if val>start and val<end:
+            return val
 def interpolate_points(sections_waypoints):
     interpolation_full = pd.DataFrame({'longitude': cfg.LONG_LIST})
     # Add empty columns to the DataFrame
@@ -99,8 +98,9 @@ def interpolate_points(sections_waypoints):
     interpolation_full['arriving_time_latest'] = np.nan
     interpolation_full['arriving_time_previous'] = np.nan
     # return the index of the smallest longitude in grids that is larger than the current position G0[1]
-
-    s_grids_lon_index = (interpolation_full['longitude'] >= cfg.WAYPOINT_G0[1]).idxmax()
+    first_row = sections_waypoints[sections_waypoints.L_timestamp > cfg.WAYPOINT_T0].iloc[:1]
+    WAYPOINT_G0 = find_G0(first_row.E_longitude.values[0], first_row.L_longitude.values[0])
+    s_grids_lon_index = (interpolation_full['longitude'] >= WAYPOINT_G0).idxmax()
     # interpolate latitude timestamp and write cog
     interpolation_full.loc[s_grids_lon_index:, ['latitude', 'timestamp', 'cog']] = (
         interpolation_full.loc[s_grids_lon_index:, :]

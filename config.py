@@ -1,10 +1,21 @@
 import pandas as pd
 import numpy as np
+import json
+from datetime import datetime, timezone
 FILE_NAME = '98765434_voyage-export.csv'
 COLUMN_NAMES = {'TIME AT WAYPOINT': 'timestamp', 'LATITUDE': 'latitude', 'LONGITUDE': 'longitude'}
 AREA_BOUNDING_BOX = [(50, 156.00000694), (25, 228.50001016)] # upper left, lower right corner
-WAYPOINT_T0 = pd.Timestamp('2022-10-14 16:28:15+00:00', tz='UTC')
-WAYPOINT_G0 = (49, 171)
+data = {}
+if FILE_NAME.endswith('.json'):
+    with open(FILE_NAME) as data_file:
+        data = json.load(data_file)
+if "decision_time" in data:
+    WAYPOINT_T0 = pd.Timestamp(data['decision_time'])
+else:
+    # tzf_obj = TimezoneFinder()
+    # tz_file = tz.gettz(tzf_obj.timezone_at(lng=cfg.WAYPOINT_G0[1], lat=cfg.WAYPOINT_G0[0]))
+    WAYPOINT_T0 = pd.Timestamp(datetime.utcnow())
+# WAYPOINT_G0 = (49, 171)
 MODEL_NAME = 'pretrained_wr_v2.pt'
 MODEL_INPUT = 'weather_ais.npy'
 LONG_LIST = np.array([156.00000694, 157.25000699, 158.50000705, 159.7500071 ,
