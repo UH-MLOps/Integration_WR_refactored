@@ -2,9 +2,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import config as cfg
-from datetime import timedelta
-from geopy.distance import distance, geodesic
-from geopy import Point, distance as geo_distance
 
 
 class BinaryClassification(nn.Module):
@@ -24,10 +21,10 @@ class BinaryClassification(nn.Module):
         self.batchnorm3 = nn.BatchNorm1d(64)
 
     def init_weights(self):
-        torch.nn.init.kaiming_normal_(self.layer_1.weight)
-        torch.nn.init.kaiming_normal_(self.layer_2.weight)
-        torch.nn.init.kaiming_normal_(self.layer_3.weight)
-        torch.nn.init.kaiming_normal_(self.layer_out.weight)
+        nn.init.kaiming_normal_(self.layer_1.weight)
+        nn.init.kaiming_normal_(self.layer_2.weight)
+        nn.init.kaiming_normal_(self.layer_3.weight)
+        nn.init.kaiming_normal_(self.layer_out.weight)
 
     def forward(self, inputs):
         x = self.relu(self.layer_1(inputs))
@@ -56,4 +53,4 @@ class BinaryClassification(nn.Module):
 if __name__ == '__main__':
     model = BinaryClassification()
     model.load_model()
-    print(bool(model.predict())
+    print(bool(model.predict()))
