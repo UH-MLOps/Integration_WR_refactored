@@ -6,4 +6,6 @@ torch==2.0.1
 geographiclib==2.0
 pytz
 
+minio==7.1.15
+
 folium

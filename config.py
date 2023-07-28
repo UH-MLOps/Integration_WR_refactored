@@ -34,3 +34,10 @@ LAT_LIST = np.array([50., 49.75, 49.5 , 49.25, 49., 48.75, 48.5, 48.25, 48.,
        29.75, 29.5 , 29.25, 29.  , 28.75, 28.5 , 28.25, 28.  , 27.75,
        27.5 , 27.25, 27.  , 26.75, 26.5 , 26.25, 26.  , 25.75, 25.5 ,
        25.25])
+
+USE_MINIO = False
+
+MINIO_HOST = ''
+MINIO_ACCESS_KEY = ''
+MINIO_SECRET_KEY = ''
+MINIO_BUCKET_NAME = 'pilot4-weather-data'

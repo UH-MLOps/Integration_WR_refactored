@@ -7,6 +7,8 @@ from geographiclib.geodesic import Geodesic as GD
 from scipy.interpolate import interpn
 from datetime import datetime, timedelta
 import pytz
+from minio import Minio
+import tempfile
 
 # --------
 
@@ -152,8 +154,8 @@ def interpolate_corresponding_weather_attributes(interpolation_full, waypoint_g0
     s_grids_lon_index = (interpolation_full['longitude'] >= waypoint_g0[1]).idxmax()
     forecast_name, forecast_ts = get_last_weather_forecast(waypoint_t0)
     # read in the needed weather forecast file
-    wf_latest = np.load('gfs_NP_' + forecast_name[0] + '.npy')
-    wf_previous = np.load('gfs_NP_' + forecast_name[1] + '.npy')
+    wf_latest = load_weather_forecast('gfs_NP_' + forecast_name[0] + '.npy')
+    wf_previous = load_weather_forecast('gfs_NP_' + forecast_name[1] + '.npy')
     # flip for the 1st dimension (latitude) because interpolation requires first dimension in accending order
     # slice and drop the last longitude as weather attributes are not needed for the destination
     wf_latest = np.flip(wf_latest, axis=0)[:, :-1, :, :]
@@ -201,6 +203,21 @@ def get_last_weather_forecast(waypoint_t0):
     last_forecast_name = f'{last_forecast.year:02d}{last_forecast.month:02d}{last_forecast.day:02d}{last_forecast.hour:02d}'
     previous_forecast_name = f'{previous_forecast.year:02d}{previous_forecast.month:02d}{previous_forecast.day:02d}{previous_forecast.hour:02d}'
     return (last_forecast_name, previous_forecast_name), (last_forecast, previous_forecast)
+
+def load_weather_forecast(filename):
+    if cfg.USE_MINIO:
+        minio = Minio(
+            endpoint=cfg.MINIO_HOST,
+            access_key=cfg.MINIO_ACCESS_KEY,
+            secret_key=cfg.MINIO_SECRET_KEY,
+            secure=False
+        )
+        with tempfile.NamedTemporaryFile() as tf:
+            minio.fget_object(cfg.MINIO_BUCKET_NAME, filename, tf.name)
+            return np.load(tf.name)
+        
+    else:
+        return np.load(filename)
 
 def hour2timeframe(row):
     '''The timeframe is from 0 to 209, but the real hour is from 0 to 384.
