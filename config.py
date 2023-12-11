@@ -1,7 +1,7 @@
 import numpy as np
 
 
-FILE_NAME = 'example_98765434.json'
+FILE_NAME = 'examples/error_voyage.json'
 COLUMN_NAMES = {'TIME AT WAYPOINT': 'timestamp', 'LATITUDE': 'latitude', 'LONGITUDE': 'longitude'}
 AREA_BOUNDING_BOX = [(50, 156.00000694), (25, 228.50001016)] # upper left, lower right corner
 
@@ -37,7 +37,7 @@ LAT_LIST = np.array([50., 49.75, 49.5 , 49.25, 49., 48.75, 48.5, 48.25, 48.,
 
 USE_MINIO = False
 
-MINIO_HOST = ''
-MINIO_ACCESS_KEY = ''
-MINIO_SECRET_KEY = ''
+MINIO_HOST = 'datalake.vessel-ai.eu'
+MINIO_ACCESS_KEY = 'vesselaiminio'
+MINIO_SECRET_KEY = 'vesselaiminio123'
 MINIO_BUCKET_NAME = 'pilot4-weather-data'

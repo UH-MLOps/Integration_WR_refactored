@@ -10,12 +10,24 @@ import pytz
 from minio import Minio
 import tempfile
 
+# Called at the end of this file
+def run_preprocessing():
+    df, waypoint_t0 = read_files()
+
+    df = fix_datatypes(df)
+    df = filter_waypoints(df, waypoint_t0)
+    waypoints = calculate_waypoints(df)
+    waypoints, waypoint_g0 = interpolate_points(waypoints, waypoint_t0)
+    weather_points = interpolate_corresponding_weather_attributes(waypoints, waypoint_g0, waypoint_t0)
+    store_train_data(weather_points)
+
+
 # --------
 
 def read_files():
     if cfg.FILE_NAME.endswith('.json'):
         with open(cfg.FILE_NAME) as data_file:
-            data = json.load(data_file)
+            data = json.load(data_file)['conf']
         df = pd.json_normalize(data, 'records')
         if 'waypoint_t0' in data:
             waypoint_t0 = pd.to_datetime(data['waypoint_t0'], format='ISO8601')
@@ -112,6 +124,9 @@ def interpolate_points(sections_waypoints, waypoint_t0):
     return interpolation_full, WAYPOINT_G0
 
 def find_G0(lon_start, lon_end, lat_start, lat_end):
+    lon_start, lon_end = sorted([lon_start, lon_end])
+    lat_start, lat_end = sorted([lat_start, lat_end])
+
     lon = [val for val in cfg.LONG_LIST if lon_start < val < lon_end][0]
     lat = [val for val in cfg.LAT_LIST if lat_start < val < lat_end][0]
     return (lat, lon)
@@ -276,10 +291,4 @@ def store_train_data(arr):
 # --------
 
 if __name__ == '__main__':
-    df, waypoint_t0 = read_files()
-    df = fix_datatypes(df)
-    df = filter_waypoints(df, waypoint_t0)
-    waypoints = calculate_waypoints(df)
-    waypoints, waypoint_g0 = interpolate_points(waypoints, waypoint_t0)
-    weather_points = interpolate_corresponding_weather_attributes(waypoints, waypoint_g0, waypoint_t0)
-    store_train_data(weather_points)
+    run_preprocessing()
